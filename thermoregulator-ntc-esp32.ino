@@ -277,10 +277,10 @@ void loop(void) {
     }
 
     if(temp_data["temperature"].as<float>() < (config_settings["set_temp"].as<float>() - temp_delta)){
-      digitalWrite(3, LOW);
+      digitalWrite(3, HIGH);
     }
     if (temp_data["temperature"].as<float>() > (config_settings["set_temp"].as<float>() + temp_delta)) {
-      digitalWrite(3, HIGH);
+      digitalWrite(3, LOW);
     }
   }
   server.handleClient();
