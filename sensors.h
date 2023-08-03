@@ -4,23 +4,33 @@ const float R_divider = 100000.0; // Опір резистора в дільни
 const float R_ntc_at_25C = 100000.0; // Опір NTC при 25 °C (100K)
 const float B = 3950.0; // Коефіцієнт Бета
 
-
 float numLimit(float num,int lim){
   float resp = round((num)*pow(10,lim))/pow(10,lim);
   return resp;
 }
 
+int getTemp(){
+
+}
+
 String getData(float calibrate_temp){
-  int rawValue = analogRead(analogInPin);
-  float voltage = rawValue * supplyVoltage / 4095.0; // Перетворення в напругу (12 бітне розширення)
 
-  // Розраховуємо опір NTC на основі відомого опору і напруги
-  float R_ntc = R_divider * (supplyVoltage / voltage - 1.0);
+  float T_sum = 0.0;
+  for (int i=0;i<10;i++){
+    int rawValue = analogRead(analogInPin);
+    float voltage = rawValue * supplyVoltage / 4095.0; // Перетворення в напругу (12 бітне розширення)
 
-  // розраховуємо температуру за допомогою рівняння Стейнхарта-Харт:
-  // T = 1 / (1 / (T0 + 273.15) + (1 / B) * ln(Rntc / R25))
-  float T0 = 25.0; // Опорна температура (зазвичай 25 °C)
-  float temperature = 1.0 / (1.0 / (T0 + 273.15) + (1.0 / B) * log(R_ntc / R_ntc_at_25C)) - 273.15;
+    // Розраховуємо опір NTC на основі відомого опору і напруги
+    float R_ntc = R_divider * (supplyVoltage / voltage - 1.0);
+
+    // розраховуємо температуру за допомогою рівняння Стейнхарта-Харт:
+    float T0 = 25.0; // Опорна температура (зазвичай 25 °C)
+    T_sum += 1.0 / (1.0 / (T0 + 273.15) + (1.0 / B) * log(R_ntc / R_ntc_at_25C)) - 273.15;
+  }
+
+  float temperature = T_sum/10;
+
+
   
   StaticJsonDocument<256> doc;
   JsonObject object = doc.to<JsonObject>();
@@ -34,5 +44,5 @@ String getData(float calibrate_temp){
 
 void sensorsSetup() {
   analogReadResolution(12);
-  pinMode(analogInPin, INPUT);
+  pinMode(2, INPUT);
 }
