@@ -2,9 +2,11 @@
 #include <WiFiClient.h>
 #include <WebServer.h>
 #include <ArduinoJson.h>
+#include <LiquidCrystal.h>
 #include "ota.h"
 #include "sensors.h"
 #include "config.h"
+#include "encoder.h"
 
 #ifndef APSSID
 #define APSSID "TempSensor"
@@ -17,6 +19,14 @@ const char* www_password;
 const char *ap_ssid = APSSID;
 const char *ap_password = APPSK;
 
+// Define the LCD pin connections
+#define LCD_RS_PIN  18  // 4 RS
+#define LCD_EN_PIN  16  // 6 Enable
+#define LCD_D4_PIN  3  // 11 pin on display
+#define LCD_D5_PIN  5  // 12 pin on display
+#define LCD_D6_PIN  7  // 13 pin on display
+#define LCD_D7_PIN  9  // 14 pin on display
+
 long lastUpdateTime = 0, previousMillis = 0, interval = 1000;
 int open_settings = 1, run_app=0;
 float temp_delta = 1; // якщо температура відрізняється від заданої на данне число виконати дію
@@ -26,8 +36,10 @@ DynamicJsonDocument config_settings(capacity);
 StaticJsonDocument<256> temp_data;
 String json_data;
 
-IPAddress ip_fin, gateway_fin, subnet_fin; 
+IPAddress ip_fin, gateway_fin, subnet_fin;
 
+// Initialize the LCD
+LiquidCrystal lcd(LCD_RS_PIN, LCD_EN_PIN, LCD_D4_PIN, LCD_D5_PIN, LCD_D6_PIN, LCD_D7_PIN);
 WebServer server(80);
 
 String getHeader(String title){
@@ -117,9 +129,10 @@ void setup(void) {
   Serial.begin(115200);
   configSetup();
   sensorsSetup();
+  encoderSetup();
 
-  pinMode(3, OUTPUT);
-  digitalWrite(3, HIGH);
+  pinMode(15, OUTPUT);
+  digitalWrite(15, HIGH);
 
   if (open_settings == 1) {
     deserializeJson(config_settings, loadConfig());
@@ -138,21 +151,36 @@ void setup(void) {
       WiFi.config(ip_fin, gateway_fin, subnet_fin);
     }
 
+    lcd.begin(16, 2);
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Booting");
+    lcd.setCursor(0, 1);
 
     int boot_try_count = 0;
     while (WiFi.status() != WL_CONNECTED && run_app == 0) {
       delay(500);
       boot_try_count++;
+      lcd.print(".");
       if (boot_try_count > 20) {
         run_app = 1;
       }
     }
-
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("wifi:" + config_settings["ssid"].as<String>());
+    lcd.setCursor(0, 1);
+    lcd.print(WiFi.localIP());
   }else{
     run_app = 1;
   }
   if (run_app == 1) {
     WiFi.softAP(ap_ssid, ap_password);
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("wifi:" + String(ap_ssid));
+    lcd.setCursor(0, 1);
+    lcd.print(WiFi.softAPIP());
   }
   otaSetup();
   www_username = config_settings["www_username"];
@@ -255,7 +283,7 @@ void setup(void) {
 
 void loop(void) {
   ArduinoOTA.handle();
-  if (open_settings == 1) {
+  if ((encoderData() == 1) || (open_settings == 1)) {
     deserializeJson(config_settings, loadConfig());
     open_settings = 0;
   }
@@ -267,6 +295,11 @@ void loop(void) {
     if (WiFi.status() != WL_CONNECTED && run_app == 0){
       ESP.restart();
     }
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("set: " + config_settings["set_temp"].as<String>());
+    lcd.setCursor(0, 1);
+    lcd.print("temp: " + temp_data["temperature"].as<String>());
 
     json_data = getData(config_settings["calibrate_temp"].as<float>());
     deserializeJson(temp_data, json_data);
@@ -277,10 +310,10 @@ void loop(void) {
     }
 
     if(temp_data["temperature"].as<float>() < (config_settings["set_temp"].as<float>() - temp_delta)){
-      digitalWrite(3, HIGH);
+      digitalWrite(15, HIGH);
     }
     if (temp_data["temperature"].as<float>() > (config_settings["set_temp"].as<float>() + temp_delta)) {
-      digitalWrite(3, LOW);
+      digitalWrite(15, LOW);
     }
   }
   server.handleClient();
