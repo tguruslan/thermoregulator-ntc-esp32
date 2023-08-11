@@ -132,7 +132,7 @@ void setup(void) {
   encoderSetup();
 
   pinMode(SSR_PIN, OUTPUT);
-  analogWrite(SSR_PIN,1000);  // Початкова частота PWM (герц)
+  analogWrite(SSR_PIN,0);  // Початкова частота PWM (герц)
 
   if (open_settings == 1) {
     deserializeJson(config_settings, loadConfig());
@@ -302,8 +302,11 @@ void loop(void) {
     json_data = getData(config_settings["calibrate_temp"].as<float>());
     deserializeJson(temp_data, json_data);
 
-    float error = config_settings["set_temp"].as<float>() - temp_data["temperature"].as<float>();
-    int pwmValue = map(abs(error), 0, 10, 0, 255);  // Залежність від різниці
+    float temp_diff = config_settings["set_temp"].as<float>() - temp_data["temperature"].as<float>();
+    int pwmValue = map(abs(temp_diff), 0, 20, 0, 255);  // Залежність від різниці
+    if(pwmValue > 255){
+      pwmValue=255;
+    }
     analogWrite(SSR_PIN, pwmValue);
   }
   server.handleClient();
