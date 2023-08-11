@@ -27,8 +27,7 @@ int encoderData(){
             String(set_temp),
             cnf_settings["www_username"].as<String>(),
             cnf_settings["www_password"].as<String>(),
-            cnf_settings["calibrate_temp"].as<String>(),
-            cnf_settings["temp_delta"].as<String>()
+            cnf_settings["calibrate_temp"].as<String>()
         );
         open_settings = 1;
     }

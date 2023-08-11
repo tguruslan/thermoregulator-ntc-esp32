@@ -1,3 +1,3 @@
 # esp temperature controller
 
-ntc 100k b3950 + ESP32 s2 mini + RELAY MODULE
+max6675 + ESP32 s2 mini + SSR module

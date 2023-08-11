@@ -23,8 +23,7 @@ String saveConfig(
   String set_temp,
   String www_username,
   String www_password,
-  String calibrate_temp,
-  String temp_delta
+  String calibrate_temp
 ) {
   const size_t capacity = 1024;
   DynamicJsonDocument doc(capacity);
@@ -36,7 +35,6 @@ String saveConfig(
   doc["subnet"] = subnet;
   doc["set_temp"] = set_temp;
   doc["calibrate_temp"] = calibrate_temp;
-  doc["temp_delta"] = temp_delta;
   doc["www_username"] = www_username;
   doc["www_password"] = www_password;
 

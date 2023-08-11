@@ -27,9 +27,10 @@ const char *ap_password = APPSK;
 #define LCD_D6_PIN  7  // 13 pin on display
 #define LCD_D7_PIN  9  // 14 pin on display
 
+#define SSR_PIN     15
+
 long lastUpdateTime = 0, previousMillis = 0, interval = 1000;
 int open_settings = 1, run_app=0;
-float temp_delta = 1; // якщо температура відрізняється від заданої на данне число виконати дію
 
 const size_t capacity = 1024;
 DynamicJsonDocument config_settings(capacity);
@@ -74,7 +75,6 @@ String getTitle(String name){
   object["gateway"]="Основний шлюз";
   object["subnet"]="Маска підмережі";
   object["set_temp"]="Задана температура";
-  object["temp_delta"]="Різниця температур для дій";
   object["calibrate_temp"]="Калібрування температури";
   object["www_username"]="Логін для веб налаштувань";
   object["www_password"]="Пароль для веб налаштувань";
@@ -131,8 +131,8 @@ void setup(void) {
   sensorsSetup();
   encoderSetup();
 
-  pinMode(15, OUTPUT);
-  digitalWrite(15, HIGH);
+  pinMode(SSR_PIN, OUTPUT);
+  analogWrite(SSR_PIN,1000);  // Початкова частота PWM (герц)
 
   if (open_settings == 1) {
     deserializeJson(config_settings, loadConfig());
@@ -232,8 +232,7 @@ void setup(void) {
         server.arg("set_temp"),
         server.arg("www_username"),
         server.arg("www_password"),
-        server.arg("calibrate_temp"),
-        server.arg("temp_delta")
+        server.arg("calibrate_temp")
       );
       open_settings = 1;
     }
@@ -260,8 +259,7 @@ void setup(void) {
       "www_username",
       "www_password",
       "set_temp",
-      "calibrate_temp",
-      "temp_delta"
+      "calibrate_temp"
     })
     {
         content += genInput(param,config_settings[param]);
@@ -304,17 +302,9 @@ void loop(void) {
     json_data = getData(config_settings["calibrate_temp"].as<float>());
     deserializeJson(temp_data, json_data);
 
- 
-    if (config_settings["temp_delta"].as<String>() != "null" && config_settings["temp_delta"].as<String>() != ""){
-      temp_delta=config_settings["temp_delta"].as<float>();
-    }
-
-    if(temp_data["temperature"].as<float>() < (config_settings["set_temp"].as<float>() - temp_delta)){
-      digitalWrite(15, HIGH);
-    }
-    if (temp_data["temperature"].as<float>() > (config_settings["set_temp"].as<float>() + temp_delta)) {
-      digitalWrite(15, LOW);
-    }
+    float error = config_settings["set_temp"].as<float>() - temp_data["temperature"].as<float>();
+    int pwmValue = map(abs(error), 0, 10, 0, 255);  // Залежність від різниці
+    analogWrite(SSR_PIN, pwmValue);
   }
   server.handleClient();
 }
