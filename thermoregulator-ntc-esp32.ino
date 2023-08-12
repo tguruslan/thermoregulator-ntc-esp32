@@ -29,6 +29,8 @@ const char *ap_password = APPSK;
 
 #define SSR_PIN     15
 
+int max_pwm_value = 150;
+
 long lastUpdateTime = 0, previousMillis = 0, interval = 1000;
 int open_settings = 1, run_app=0;
 
@@ -293,21 +295,21 @@ void loop(void) {
     if (WiFi.status() != WL_CONNECTED && run_app == 0){
       ESP.restart();
     }
-    lcd.clear();
-    lcd.setCursor(0, 0);
-    lcd.print("set: " + config_settings["set_temp"].as<String>());
-    lcd.setCursor(0, 1);
-    lcd.print("temp: " + temp_data["temperature"].as<String>());
 
     json_data = getData(config_settings["calibrate_temp"].as<float>());
     deserializeJson(temp_data, json_data);
 
-    float temp_diff = config_settings["set_temp"].as<float>() - temp_data["temperature"].as<float>();
-    int pwmValue = map(abs(temp_diff), 0, 20, 0, 255);  // Залежність від різниці
-    if(pwmValue > 255){
-      pwmValue=255;
-    }
+    float temp_diff = (config_settings["set_temp"].as<float>() - temp_data["temperature"].as<float>()) * 10;
+    int pwmValue = map(abs(temp_diff), 0, 700, 0, max_pwm_value);  // Залежність від різниці
+    if(pwmValue > max_pwm_value){pwmValue=max_pwm_value;}
+    if(temp_diff < 0){pwmValue=0;}
     analogWrite(SSR_PIN, pwmValue);
+
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("set: " + String(config_settings["set_temp"].as<int>()));
+    lcd.setCursor(0, 1);
+    lcd.print("temp: " + temp_data["temperature"].as<String>());
   }
   server.handleClient();
 }
