@@ -1,42 +1,29 @@
+#define SW 38
 #define CLK 39
 #define DT 40
 int currentStateCLK;
 int lastStateCLK;
 
-DynamicJsonDocument cnf_settings(1024);
+int buttonData(){
+    return digitalRead(SW);
+}
 
-int encoderData(){
-    int open_settings = 0;
+float encoderData(float set_temp){
     currentStateCLK = digitalRead(CLK);
     if (currentStateCLK != lastStateCLK  && currentStateCLK == 1) {
-        deserializeJson(cnf_settings, loadConfig());
-        float set_temp = cnf_settings["set_temp"].as<float>();
-
         if (digitalRead(DT) != currentStateCLK) {
             set_temp ++;
         } else {
             set_temp --;
         }
-        
-        saveConfig(
-            cnf_settings["ssid"].as<String>(),
-            cnf_settings["password"].as<String>(),
-            cnf_settings["ip"].as<String>(),
-            cnf_settings["gateway"].as<String>(),
-            cnf_settings["subnet"].as<String>(),
-            String(set_temp),
-            cnf_settings["www_username"].as<String>(),
-            cnf_settings["www_password"].as<String>(),
-            cnf_settings["calibrate_temp"].as<String>()
-        );
-        open_settings = 1;
     }
     lastStateCLK = currentStateCLK;
-    return open_settings;
+    return set_temp;
 }
 
 void encoderSetup() {
     pinMode(CLK, INPUT);
     pinMode(DT, INPUT);
+    pinMode(SW, INPUT);
     lastStateCLK = digitalRead(CLK);
 }

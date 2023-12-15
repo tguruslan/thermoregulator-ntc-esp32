@@ -33,6 +33,15 @@ int max_pwm_value = 150;
 
 long lastUpdateTime = 0, previousMillis = 0, interval = 1000;
 int open_settings = 1, run_app=0;
+float set_temp = 0;
+String heat="off";
+
+const int SHORT_PRESS_TIME = 500; // 500 milliseconds
+const int LONG_PRESS_TIME  = 1000;
+int lastState = HIGH;  // the previous state from the input pin
+int currentState;     // the current reading from the input pin
+unsigned long pressedTime  = 0;
+unsigned long releasedTime = 0;
 
 const size_t capacity = 1024;
 DynamicJsonDocument config_settings(capacity);
@@ -283,10 +292,52 @@ void setup(void) {
 
 void loop(void) {
   ArduinoOTA.handle();
-  if ((encoderData() == 1) || (open_settings == 1)) {
+
+  if (open_settings == 1) {
     deserializeJson(config_settings, loadConfig());
     open_settings = 0;
   }
+
+  if(set_temp < 1){
+    set_temp = config_settings["set_temp"].as<float>();
+  }
+
+  set_temp = encoderData(set_temp);
+
+  currentState = buttonData();
+
+  if(lastState == HIGH && currentState == LOW){
+    pressedTime = millis();
+  }else if(lastState == LOW && currentState == HIGH) {
+    releasedTime = millis();
+    long pressDuration = releasedTime - pressedTime;
+
+    if( pressDuration < SHORT_PRESS_TIME ){
+      saveConfig(
+        config_settings["ssid"].as<String>(),
+        config_settings["password"].as<String>(),
+        config_settings["ip"].as<String>(),
+        config_settings["gateway"].as<String>(),
+        config_settings["subnet"].as<String>(),
+        String(set_temp),
+        config_settings["www_username"].as<String>(),
+        config_settings["www_password"].as<String>(),
+        config_settings["calibrate_temp"].as<String>()
+      );
+      open_settings = 1;
+    }
+    if(pressDuration > LONG_PRESS_TIME ){
+      if(heat == "on"){
+        heat="off";
+      }else{
+        heat="on";
+      }
+      lastUpdateTime=0;
+    }
+
+  }
+  lastState = currentState;
+
 
   if (lastUpdateTime == 0 || (millis() - lastUpdateTime > interval))
   {
@@ -299,15 +350,20 @@ void loop(void) {
     json_data = getData(config_settings["calibrate_temp"].as<float>());
     deserializeJson(temp_data, json_data);
 
-    float temp_diff = (config_settings["set_temp"].as<float>() - temp_data["temperature"].as<float>()) * 10;
-    int pwmValue = map(abs(temp_diff), 0, 700, 0, max_pwm_value);  // Залежність від різниці
-    if(pwmValue > max_pwm_value){pwmValue=max_pwm_value;}
-    if(temp_diff < 0){pwmValue=0;}
-    analogWrite(SSR_PIN, pwmValue);
+    if(heat == "on"){
+      float temp_diff = (config_settings["set_temp"].as<float>() - temp_data["temperature"].as<float>()) * 10;
+      int pwmValue = map(abs(temp_diff), 0, 700, 0, max_pwm_value);  // Залежність від різниці
+      if(pwmValue > max_pwm_value){pwmValue=max_pwm_value;}
+      if(temp_diff <= 0){pwmValue=0;}
+
+      analogWrite(SSR_PIN, pwmValue);
+    }else{
+      analogWrite(SSR_PIN, 0);
+    }
 
     lcd.clear();
     lcd.setCursor(0, 0);
-    lcd.print("set: " + String(config_settings["set_temp"].as<int>()));
+    lcd.print("set: " + String(set_temp) + "  "+heat);
     lcd.setCursor(0, 1);
     lcd.print("temp: " + temp_data["temperature"].as<String>());
   }
