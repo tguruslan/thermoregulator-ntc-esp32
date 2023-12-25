@@ -2,11 +2,13 @@
 #include <WiFiClient.h>
 #include <WebServer.h>
 #include <ArduinoJson.h>
-#include <LiquidCrystal.h>
+#include <LiquidCrystal_I2C.h>
 #include "ota.h"
 #include "sensors.h"
 #include "config.h"
 #include "encoder.h"
+
+#include <Wire.h>
 
 #ifndef APSSID
 #define APSSID "TempSensor"
@@ -18,14 +20,6 @@ const char* www_password;
 
 const char *ap_ssid = APSSID;
 const char *ap_password = APPSK;
-
-// Define the LCD pin connections
-#define LCD_RS_PIN  18  // 4 RS
-#define LCD_EN_PIN  16  // 6 Enable
-#define LCD_D4_PIN  3  // 11 pin on display
-#define LCD_D5_PIN  5  // 12 pin on display
-#define LCD_D6_PIN  7  // 13 pin on display
-#define LCD_D7_PIN  9  // 14 pin on display
 
 #define SSR_PIN     15
 
@@ -51,7 +45,7 @@ String json_data;
 IPAddress ip_fin, gateway_fin, subnet_fin;
 
 // Initialize the LCD
-LiquidCrystal lcd(LCD_RS_PIN, LCD_EN_PIN, LCD_D4_PIN, LCD_D5_PIN, LCD_D6_PIN, LCD_D7_PIN);
+LiquidCrystal_I2C lcd(0x27, 16, 2);
 WebServer server(80);
 
 String getHeader(String title){
@@ -138,6 +132,9 @@ String genInput(String name, String val){
 
 void setup(void) {
   Serial.begin(115200);
+  lcd.init();
+  lcd.clear();  
+  Wire.begin();
   configSetup();
   sensorsSetup();
   encoderSetup();
@@ -161,8 +158,6 @@ void setup(void) {
 
       WiFi.config(ip_fin, gateway_fin, subnet_fin);
     }
-
-    lcd.begin(16, 2);
     lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("Booting");
@@ -361,7 +356,7 @@ void loop(void) {
       analogWrite(SSR_PIN, 0);
     }
 
-    lcd.clear();
+    // lcd.clear();
     lcd.setCursor(0, 0);
     lcd.print("set: " + String(set_temp) + "  "+heat);
     lcd.setCursor(0, 1);
