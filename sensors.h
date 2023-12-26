@@ -1,8 +1,8 @@
 #include "max6675.h"
 
-int thermoMISO = 37;
-int thermoSC = 34;
-int thermoCLK = 36;
+int thermoMISO = 12;
+int thermoSC = 15;
+int thermoCLK = 14;
 
 MAX6675 thermocouple(thermoCLK, thermoSC, thermoMISO);
 

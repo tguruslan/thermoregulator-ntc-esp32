@@ -1,6 +1,6 @@
-#include <WiFi.h>
+#include <ESP8266WiFi.h>
 #include <WiFiClient.h>
-#include <WebServer.h>
+#include <ESP8266WebServer.h>
 #include <ArduinoJson.h>
 #include <LiquidCrystal_I2C.h>
 #include "ota.h"
@@ -21,7 +21,7 @@ const char* www_password;
 const char *ap_ssid = APSSID;
 const char *ap_password = APPSK;
 
-#define SSR_PIN     15
+#define SSR_PIN     13
 
 int max_pwm_value = 150;
 
@@ -46,7 +46,7 @@ IPAddress ip_fin, gateway_fin, subnet_fin;
 
 // Initialize the LCD
 LiquidCrystal_I2C lcd(0x27, 16, 2);
-WebServer server(80);
+ESP8266WebServer server(80);
 
 String getHeader(String title){
   String html = "<!DOCTYPE html>";

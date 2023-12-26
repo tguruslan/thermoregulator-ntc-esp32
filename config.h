@@ -1,14 +1,16 @@
 #include <ArduinoJson.h>
 #include "FS.h"
-#include "FFat.h"
+#include <LittleFS.h>
 
 String loadConfig() {
-  File configFile = FFat.open(F("/config.json"), "r");
+  File configFile = LittleFS.open("/config.json", "r");
   if (!configFile) {
+    Serial.println("Failed to open wifi config file");
     return "[]";
   }
   
   size_t size = configFile.size();
+  if (size > 1024) {Serial.println(" wifi config file size is too large");}
   std::unique_ptr<char[]> buf(new char[size]);
   configFile.readBytes(buf.get(), size);
   return buf.get();
@@ -38,7 +40,7 @@ String saveConfig(
   doc["www_username"] = www_username;
   doc["www_password"] = www_password;
 
-  File configFile = FFat.open(F("/config.json"), "w");
+  File configFile = LittleFS.open(F("/config.json"), "w");
   if (!configFile) {
     return "<h3>Якась помилка</h3>";
   }
@@ -47,7 +49,10 @@ String saveConfig(
 }
 
 void configSetup() {
-  if (!FFat.begin(true)) {
+  Serial.println("Mounting FS...");
+
+  if (!LittleFS.begin()) {
+    Serial.println("Failed to mount file system");
     return;
   }
 }

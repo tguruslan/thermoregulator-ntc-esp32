@@ -1,6 +1,6 @@
-#define SW 38
-#define CLK 39
-#define DT 40
+#define SW 2
+#define CLK 9
+#define DT 10
 int currentStateCLK;
 int lastStateCLK;
 
