@@ -1,6 +1,6 @@
-#define SW 2
-#define CLK 9
-#define DT 10
+#define SW 0
+#define CLK 16
+#define DT 13
 int currentStateCLK;
 int lastStateCLK;
 
@@ -16,6 +16,8 @@ float encoderData(float set_temp){
         } else {
             set_temp --;
         }
+        if(set_temp > 400){set_temp=20;}
+        if(set_temp < 1){set_temp=400;}
     }
     lastStateCLK = currentStateCLK;
     return set_temp;

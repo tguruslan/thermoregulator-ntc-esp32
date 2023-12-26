@@ -21,7 +21,7 @@ const char* www_password;
 const char *ap_ssid = APSSID;
 const char *ap_password = APPSK;
 
-#define SSR_PIN     13
+#define SSR_PIN     15
 
 int max_pwm_value = 150;
 
@@ -177,6 +177,7 @@ void setup(void) {
     lcd.print("wifi:" + config_settings["ssid"].as<String>());
     lcd.setCursor(0, 1);
     lcd.print(WiFi.localIP());
+    delay(1000);
   }else{
     run_app = 1;
   }
@@ -187,6 +188,7 @@ void setup(void) {
     lcd.print("wifi:" + String(ap_ssid));
     lcd.setCursor(0, 1);
     lcd.print(WiFi.softAPIP());
+    delay(1000);
   }
   otaSetup();
   www_username = config_settings["www_username"];
@@ -356,9 +358,9 @@ void loop(void) {
       analogWrite(SSR_PIN, 0);
     }
 
-    // lcd.clear();
+    lcd.clear();
     lcd.setCursor(0, 0);
-    lcd.print("set: " + String(set_temp) + "  "+heat);
+    lcd.print("set: " + String(int(set_temp)) + "  "+heat);
     lcd.setCursor(0, 1);
     lcd.print("temp: " + temp_data["temperature"].as<String>());
   }

@@ -3,8 +3,8 @@
 void otaSetup()
 {
   ArduinoOTA.setPort(8266);
-  ArduinoOTA.setHostname("TempSensor");
-  ArduinoOTA.setPassword("TempSensor");
+  ArduinoOTA.setHostname("termoregulator");
+  ArduinoOTA.setPassword("termoregulator");
 
   ArduinoOTA.onStart([]() {
     String type;
